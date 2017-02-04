@@ -7,7 +7,8 @@ By itself, it is not useful. But if you use it in conjunction with a dynamic
 routing protocol (e.g. OSPF) and redistribute static routes, you can easily
 avoid geo blocking with this. Of course, you have to make sure, that names are
 resolved via the same host, because it could happen, that addresses are based
-on the geographic location.
+on the geographic location. If you use a resolver, you can redirect specific
+domains by using a “forwarder”.
 
 Usage
 -----
