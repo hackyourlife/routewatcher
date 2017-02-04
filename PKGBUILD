@@ -9,7 +9,7 @@ depends=("python" "python-dnspython")
 backup=(etc/routewatcher-domains.lst)
 source=(routewatcher domains.lst routewatcher.service)
 md5sums=('c505cfbe83e59fd25e341a3373d01ade'
-         '757b1635bb6a2ad61ca20b5c1f227f76'
+         'f35f8c734b009e37babff58d6f359cdd'
          '402e52aa75c23bf8bc07bc2922edd766')
 
 package() {
