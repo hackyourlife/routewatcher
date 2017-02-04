@@ -94,9 +94,6 @@ def main(domains=DOMAINS, route=get_default_route(), interval=INTERVAL,
 		max_age=MAX_AGE):
 	hosts = {}
 
-	show_hosts = lambda: ", ".join([ "%s" % str(x) \
-			for x in sorted(hosts.keys()) ])
-
 	def cleanup():
 		for host in hosts:
 			del_route(host, route)

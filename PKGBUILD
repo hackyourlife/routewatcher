@@ -8,7 +8,7 @@ license=("Custom")
 depends=("python" "python-dnspython")
 backup=(etc/routewatcher-domains.lst)
 source=(routewatcher domains.lst routewatcher.service)
-md5sums=('c505cfbe83e59fd25e341a3373d01ade'
+md5sums=('2beedc30192413bfa825a84ca1e31a54'
          'f35f8c734b009e37babff58d6f359cdd'
          '402e52aa75c23bf8bc07bc2922edd766')
 
