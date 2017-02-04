@@ -1,18 +1,21 @@
 #!/bin/python
 # vim:set ts=8 sts=8 sw=8 tw=80 cc=80 noet:
 
+from os.path import isfile
 from subprocess import call
 from dns.resolver import Resolver
 from time import sleep, time
-import json
 
 def get_contents(filename):
-	with open(filename) as f:
-		return "".join(f.readlines())
+	fn = filename
+	if not isfile(filename) and isfilename("/etc/" + filename):
+		fn = "/etc/" + filename
+	with open(fn) as f:
+		return [ x.strip() for x in f.readlines() ]
 
 MAX_AGE = 600
 INTERVAL = 30
-DOMAINS = json.loads(get_contents("domains.json"))
+DOMAINS = get_contents("domains.lst")
 
 def find(items, predicate, default=None):
 	return next((x for x in items if predicate(x)), default)
