@@ -5,17 +5,15 @@ from os.path import isfile
 from subprocess import call
 from dns.resolver import Resolver
 from time import sleep, time
+from signal import signal, SIGTERM
 
 def get_contents(filename):
-	fn = filename
-	if not isfile(filename) and isfilename("/etc/" + filename):
-		fn = "/etc/" + filename
-	with open(fn) as f:
+	with open(filename) as f:
 		return [ x.strip() for x in f.readlines() ]
 
 MAX_AGE = 600
 INTERVAL = 30
-DOMAINS = get_contents("domains.lst")
+DOMAINS = get_contents("/etc/routewatcher-domains.lst")
 
 def find(items, predicate, default=None):
 	return next((x for x in items if predicate(x)), default)
@@ -99,6 +97,12 @@ def main(domains=DOMAINS, route=get_default_route(), interval=INTERVAL,
 	show_hosts = lambda: ", ".join([ "%s" % str(x) \
 			for x in sorted(hosts.keys()) ])
 
+	def cleanup():
+		for host in hosts:
+			del_route(host, route)
+
+	signal(SIGTERM, cleanup)
+
 	try:
 		while True:
 			for domain in domains:
@@ -116,8 +120,7 @@ def main(domains=DOMAINS, route=get_default_route(), interval=INTERVAL,
 
 			sleep(interval)
 	except:
-		for host in hosts:
-			del_route(host, route)
+		cleanup()
 
 if __name__ == "__main__":
 	main()

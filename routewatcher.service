@@ -1,0 +1,14 @@
+# systemd service file for routewatcher
+
+[Unit]
+Description=routewatcher
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/routewatcher
+RestartSec=10
+Restart=always
+StandardOutput=syslog
+
+[Install]
+WantedBy=multi-user.target
