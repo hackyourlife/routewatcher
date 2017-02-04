@@ -13,8 +13,9 @@ domains by using a “forwarder”.
 Usage
 -----
 
-Edit `domains.json` to include all the domains you want to watch.
+Edit `/etc/routewatcher-domains.lst` to include all the domains you want to
+watch.
 
 ```
-su -c ./routewatcher
+systemctl start routewatcher
 ```
