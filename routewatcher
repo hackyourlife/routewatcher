@@ -1,0 +1,120 @@
+#!/bin/python
+# vim:set ts=8 sts=8 sw=8 tw=80 cc=80 noet:
+
+from subprocess import call
+from dns.resolver import Resolver
+from time import sleep, time
+import json
+
+def get_contents(filename):
+	with open(filename) as f:
+		return "".join(f.readlines())
+
+MAX_AGE = 600
+INTERVAL = 30
+DOMAINS = json.loads(get_contents("domains.json"))
+
+def find(items, predicate, default=None):
+	return next((x for x in items if predicate(x)), default)
+
+def parse_raw(rawip):
+	return ".".join(reversed([ str(int("".join(x), 16)) \
+			for x in zip(*[iter(rawip)] * 2) ]))
+
+class Host(object):
+	def __init__(self, domain, ip):
+		self.domain = domain
+		self.ip = ip
+		self.time = time()
+
+	def get_age(self):
+		return time() - self.time
+
+	age = property(get_age, None)
+
+	def __str__(self):
+		return "%s (%s; %d)" % (self.domain, self.ip, self.age)
+
+	def __repr__(self):
+		return self.__str__()
+
+class Route(object):
+	def __init__(self, line):
+		self.iface = line[0]
+		self.destination = parse_raw(line[1])
+		self.gateway = parse_raw(line[2])
+		self.flags = int(line[3])
+		self.refcnt = int(line[4])
+		self.use = int(line[5])
+		self.metric = int(line[6])
+		self.mask = parse_raw(line[7])
+		self.mtu = int(line[8])
+		self.window = int(line[9])
+		self.irtt = int(line[10])
+
+	def __str__(self):
+		return "%s: %s/%s via %s [%d]" % (self.iface, self.destination,
+				self.mask, self.gateway, self.metric)
+
+	def __repr__(self):
+		return self.__str__()
+
+def get_hosts(domain, ipv6=False):
+	record = "AAAA" if ipv6 else "A"
+	resolver = Resolver()
+	resolver.nameservers = ["127.0.0.1", "::1", "8.8.8.8", "8.8.4.4"]
+	resolver.lifetime = 5
+	result = [ str(x) for x in resolver.query(domain, record) ]
+	return result
+
+def get_routes():
+	with open("/proc/net/route") as f:
+		lines = [ [ y.strip() for y in x.split("\t") ] \
+				for x in f.readlines()[1:] ]
+	return [ Route(x) for x in lines ]
+
+def get_default_route():
+	routes = get_routes()
+	default_route = find(routes, lambda x: x.destination == "0.0.0.0" \
+			and x.mask == "0.0.0.0")
+	return default_route.gateway
+
+def add_route(ip, route):
+	print("adding route: %s via %s" % (ip, route))
+	cmd = ["ip", "route", "add", "%s/32" % ip, "via", route]
+	call(cmd)
+
+def del_route(ip, route):
+	print("removing route: %s via %s" % (ip, route))
+	cmd = ["ip", "route", "del", "%s/32" % ip, "via", route]
+	call(cmd)
+
+def main(domains=DOMAINS, route=get_default_route(), interval=INTERVAL,
+		max_age=MAX_AGE):
+	hosts = {}
+
+	show_hosts = lambda: ", ".join([ "%s" % str(x) \
+			for x in sorted(hosts.keys()) ])
+
+	try:
+		while True:
+			for domain in domains:
+				current_hosts = get_hosts(domain)
+				for host in current_hosts:
+					if not host in hosts:
+						add_route(host, route)
+					hosts[host] = Host(domain, host)
+
+			rm = [ host for host in hosts \
+					if hosts[host].age > max_age ]
+			for host in rm:
+				del_route(host, route)
+				del hosts[host]
+
+			sleep(interval)
+	except:
+		for host in hosts:
+			del_route(host, route)
+
+if __name__ == "__main__":
+	main()
